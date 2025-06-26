@@ -1,0 +1,111 @@
+
+Task 1 – “Most Effective Department” Analysis
+Requirements:
+For each department:
+Average salary
+Number of employees
+Name(s) of the highest-paid employee(s)
+Number of employees earning above the department’s average salary
+Only show departments that have employees
+
+
+
+select 
+    d.department_id,
+    d.department_name,
+    round(avg(e.salary),0) avg_salary,
+    count(e.employee_id) count_emp,
+    max(case when rnk=1 then e.first_name ||  ' ' ||  e.last_name end ) high_sal_emp,
+    count(case when e.salary > avg_sal_dep then 1 end) high_than_avg
+from hr.departments d
+JOIN hr.EMPLOYEES e on d.DEPARTMENT_ID=e.department_id
+left join 
+    (
+    select employee_id,department_id,
+    rank() over(partition by department_id order by salary desc) rnk
+    from hr.EMPLOYEES
+    ) max_sal_emp
+on e.EMPLOYEE_ID=max_sal_emp.employee_id
+join
+    (
+    select department_id,
+    round(avg(salary),0) avg_sal_dep
+    from hr.employees 
+    group by department_id
+    ) avg_sal_sub
+on d.department_id=avg_sal_sub.department_id
+group by d.DEPARTMENT_ID, d.department_name
+
+
+
+Task 2 – “Manager Effectiveness”
+Requirements:
+For each manager:
+Number of employees reporting to them
+Average salary of their direct reports
+If at least one direct report has a salary over 10,000, mark the manager with a High Performer tag
+Only include managers who are also employees themselves (i.e., have a manager_id in the employees table)
+
+
+
+select 
+    r.REGION_NAME,
+    count(e.employee_id) count_per_emp,
+    sum(e.salary) sum_sal_emp,
+    count(distinct(c.country_id)) count_country,
+    rnk_data.city_name
+from hr.regions r
+join hr.countries c on r.region_id=c.region_id
+join hr.locations l on c.country_id=l.country_id
+join hr.departments d on l.location_id=d.location_id
+join hr.employees e on d.department_id=e.department_id
+join
+    (select r2.region_id,
+        l.city city_name,
+        rank() over(partition by r2.REGION_ID order by count(e.employee_id) desc) rnk
+    from hr.regions r2
+    join hr.countries c on r2.region_id=c.region_id
+    join hr.locations l on c.country_id=l.country_id
+    join hr.departments d on l.location_id=d.location_id
+    join hr.employees e on d.department_id=e.department_id
+    group by r2.region_id,l.city) rnk_data 
+on r.region_id=rnk_data.region_id and rnk_data.rnk=1
+group by r.region_id,r.REGION_NAME,rnk_data.city_name
+
+
+
+Task 3 – “Global Comparison Analysis”
+Requirements:
+For each region:
+Total number of employees
+Total salary amount
+Name of the city with the highest number of employees in that region
+Number of countries within that region
+
+
+
+select 
+    r.REGION_NAME,
+    count(e.employee_id) count_per_emp,
+    sum(e.salary) sum_sal_emp,
+    count(distinct(c.country_id)) count_country,
+    rnk_data.city_name
+from hr.regions r
+join hr.countries c on r.region_id=c.region_id
+join hr.locations l on c.country_id=l.country_id
+join hr.departments d on l.location_id=d.location_id
+join hr.employees e on d.department_id=e.department_id
+join
+    (select r2.region_id,
+        l.city city_name,
+        rank() over(partition by r2.REGION_ID order by count(e.employee_id) desc) rnk
+    from hr.regions r2
+    join hr.countries c on r2.region_id=c.region_id
+    join hr.locations l on c.country_id=l.country_id
+    join hr.departments d on l.location_id=d.location_id
+    join hr.employees e on d.department_id=e.department_id
+    group by r2.region_id,l.city) rnk_data 
+on r.region_id=rnk_data.region_id and rnk_data.rnk=1
+group by r.region_id,r.REGION_NAME,rnk_data.city_name
+
+
